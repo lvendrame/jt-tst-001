@@ -1,5 +1,4 @@
-
-import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FoodShop } from './entities/food-shop.entity'; // Assuming the entity exists
@@ -38,6 +37,17 @@ export class AppService {
     return true;
   }
 
+  async checkFoodShopEditableStatus(foodShopId: string): Promise<void> {
+    const foodShop = await this.foodShopRepository.findOne(foodShopId);
+    if (!foodShop || foodShop.status !== FoodShopStatus.Pending) {
+      throw new HttpException(
+        "This shop can't be edited",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    // If the status is "Pending", the method ends here, indicating the shop is editable
+  }
+
   async checkEditPermission(userId: string, foodShopId: string): Promise<boolean> {
     if (isNaN(Number(foodShopId))) {
       throw new BadRequestException('Wrong format.');
@@ -66,7 +76,6 @@ export class AppService {
       }
 
       try {
-        // Existing update logic...
         foodShop.contract_status = contract_status.toLowerCase() === 'yes';
         foodShop.shop_name = shop_name;
         foodShop.status = status;
@@ -78,6 +87,7 @@ export class AppService {
         throw new InternalServerErrorException('Internal server error');
       }
     } catch (error) {
+      Logger.error(error);
       return 'Internal server error';
     }
   }

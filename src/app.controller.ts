@@ -1,4 +1,4 @@
- {
+import {
   Controller,
   Logger,
   Get,
@@ -38,6 +38,11 @@ export class AppController {
     @Param('id', ParseIntPipe) food_shop_id: number,
     @Body() updateFoodShopDto: UpdateFoodShopDto,
   ): Promise<{ status: number; message: string }> {
+    try {
+      await this.appService.checkFoodShopEditableStatus(food_shop_id.toString());
+    } catch (error) {
+      throw error;
+    }
     if (typeof updateFoodShopDto.shop_name !== 'string' || updateFoodShopDto.shop_name.length > 50) {
       throw new BadRequestException('50 文字以内で入力してください');
     }
