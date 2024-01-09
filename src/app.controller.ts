@@ -92,43 +92,27 @@ export class AppController {
     }
   }
 
+  // Merged the handleInternalError and handleInternalServerError methods
   @Get(':id/error_handling')
-  async handleInternalServerError(
+  async handleInternalError(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ status: number; message: string }> {
     try {
       const foodShop = await this.appService.getFoodShopDetails(id.toString());
       if (!foodShop) {
-        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
+        throw new HttpException('Food shop not found', HttpStatus.NOT_FOUND);
       }
       // Assuming handleInternalServerError is a method that might throw an error
       await this.appService.handleInternalServerError(id.toString());
-      return { status: 200, message: 'No internal server error occurred.' };
+      return { status: 200, message: 'Internal error handling executed successfully' };
     } catch (error) {
-      if (error.status === HttpStatus.NOT_FOUND) {
+      if (error instanceof HttpException && error.getStatus() === HttpStatus.NOT_FOUND) {
         throw error;
       }
       this.logger.error(`Internal server error: ${error.message}`, error.stack);
-      throw new InternalServerErrorException({ status: 500, message: 'Internal server error' });
+      throw new InternalServerErrorException('Internal server error');
     }
   }
 
-  @Delete(':id/error_handling')
-  async handleInternalError(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ status: number; message: string }> {
-    try {
-      const result = await this.appService.deleteFoodShopWithErrorHandling(id);
-      if (!result) {
-        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
-      }
-      return result;
-    } catch (error) {
-      if (error.status === HttpStatus.NOT_FOUND) {
-        throw error;
-      }
-      this.logger.error(`Failed to delete food shop: ${error.message}`, error.stack);
-      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
+  // Removed the Delete method for error handling as it was not present in the new code
 }
