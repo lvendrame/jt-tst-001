@@ -10,10 +10,10 @@ Rails.application.routes.draw do
   namespace :api do
     resources :food_shops, only: [] do
       get :editable_status, on: :member
-      # The new route from the new code is added here to avoid conflict
-      get :check_edit_permission, on: :member
       put :update, on: :member
       post :validate, on: :member
+      # New route from the new code
+      get :check_edit_permission, on: :member
       # The catch-all route for update has been removed to resolve the conflict
     end
   end
