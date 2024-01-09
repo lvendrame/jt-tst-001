@@ -1,8 +1,9 @@
 class Api::FoodShopsController < ApplicationController
-  before_action :doorkeeper_authorize!, only: [:check_edit_permission]
-  before_action :validate_food_shop_id, only: [:editable_status, :check_edit_permission]
-  before_action :authenticate_user!, only: [:update]
-  before_action :set_food_shop, only: [:update, :editable_status]
+  before_action :doorkeeper_authorize!, only: [:check_edit_permission, :validate]
+  before_action :validate_member_status, only: [:validate]
+  before_action :validate_food_shop_id, only: [:editable_status, :check_edit_permission, :validate]
+  before_action :authenticate_user!, only: [:update, :validate]
+  before_action :set_food_shop, only: [:update, :editable_status, :validate]
   rescue_from StandardError, with: :handle_internal_server_error
 
   # GET /api/food_shops/:id/edit_permission
@@ -15,7 +16,7 @@ class Api::FoodShopsController < ApplicationController
       render json: { status: 200, permission: true }, status: :ok
     elsif result[:error]
       render json: { error: result[:error] }, status: error_status(result[:error])
-    end unless result.success?
+    end
   end
 
   # GET /api/food_shops/:id/editable_status
@@ -72,7 +73,29 @@ class Api::FoodShopsController < ApplicationController
     end
   end
 
+  # POST /api/food_shops/:id/validate
+  def validate
+    food_shop = FoodShop.new(food_shop_params)
+    if food_shop.valid?
+      render json: { status: 200, message: "Validation successful." }, status: :ok
+    else
+      render json: { error: food_shop.errors.full_messages.to_sentence }, status: :unprocessable_entity
+    end
+  rescue ActionController::ParameterMissing => e
+    render json: { error: e.message }, status: :bad_request
+  end
+
   private
+
+  def validate_member_status
+    unless current_resource_owner.is_member
+      render json: { error: 'Unauthorized - User is not a member of FfF' }, status: :unauthorized
+    end
+  end
+
+  def food_shop_params
+    params.require(:food_shop).permit(:contract_status, :shop_name, :status)
+  end
 
   def set_food_shop
     @food_shop = FoodShop.find_by(id: params[:food_shop_id] || params[:id])

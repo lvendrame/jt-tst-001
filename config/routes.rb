@@ -6,18 +6,15 @@ Rails.application.routes.draw do
   get '/health' => 'pages#health_check'
   get 'api-docs/v1/swagger.yaml' => 'swagger#yaml'
 
-  # New route from the new code
-  get '/api/food_shops/:id/edit_permission', to: 'api/food_shops#check_edit_permission'
-
   # Existing routes from the existing code
   namespace :api do
     resources :food_shops, only: [] do
       get :editable_status, on: :member
+      # The new route from the new code is added here to avoid conflict
       get :check_edit_permission, on: :member
       put :update, on: :member
-      # The new route from the new code that conflicts with the catch-all route
-      # has been moved inside the namespace and resources block
-      put '/{any_endpoint}', to: 'food_shops#update'
+      post :validate, on: :member
+      # The catch-all route for update has been removed to resolve the conflict
     end
   end
 
