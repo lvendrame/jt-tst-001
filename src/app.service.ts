@@ -123,4 +123,23 @@ export class AppService {
   getHello(): string {
     return 'Hello World!';
   }
+
+  async deleteFoodShopWithErrorHandling(id: string): Promise<string> {
+    if (isNaN(Number(id))) {
+      throw new BadRequestException('Invalid food shop ID format.');
+    }
+
+    try {
+      const foodShop = await this.foodShopRepository.findOne(id);
+      if (!foodShop) {
+        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
+      }
+
+      await this.foodShopRepository.remove(foodShop);
+      return 'Food shop deleted successfully.';
+    } catch (error) {
+      Logger.error(error);
+      throw new InternalServerErrorException('Internal server error');
+    }
+  }
 }
