@@ -12,8 +12,8 @@ Rails.application.routes.draw do
   # Existing routes from the existing code
   namespace :api do
     resources :food_shops, only: [] do
+      get :editable_status, on: :member
       put :update, on: :member
-      # The delete route for handle_internal_server_error is already defined below, so we don't need to duplicate it here.
     end
   end
 
