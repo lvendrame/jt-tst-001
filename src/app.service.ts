@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { FoodShop } from './food_shop.entity'; // Assuming the entity exists
 
+enum FoodShopStatus {
+  Publish = 'Publish',
+  Pending = 'Pending',
+}
+
 @Injectable()
 export class AppService {
   async getFoodShopDetails(foodShopId: string): Promise<{ contract_status: string; shop_name: string; status: string; }> {
@@ -24,6 +29,29 @@ export class AppService {
     }
 
     return true;
+  }
+
+  async updateFoodShop(food_shop_id: string, user_id: string, contract_status: string, shop_name: string, status: FoodShopStatus): Promise<string> {
+    try {
+      const foodShop = await FoodShop.findOne({ where: { id: food_shop_id, user_id: user_id } });
+      if (!foodShop) {
+        return 'Food shop not found';
+      }
+
+      const validationResult = this.validateShopInformation(shop_name, contract_status);
+      if (validationResult !== true) {
+        return validationResult as string;
+      }
+
+      foodShop.contract_status = contract_status.toLowerCase() === 'yes';
+      foodShop.shop_name = shop_name;
+      foodShop.status = status;
+
+      await FoodShop.save(foodShop);
+      return 'Editing completed';
+    } catch (error) {
+      return 'Internal server error';
+    }
   }
 
   getHello(): string {
