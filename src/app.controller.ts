@@ -40,24 +40,24 @@ export class AppController {
   ): Promise<{ status: number; message: string }> {
     try {
       await this.appService.checkFoodShopEditableStatus(food_shop_id.toString());
-    } catch (error) {
-      throw error;
-    }
-    if (typeof updateFoodShopDto.shop_name !== 'string' || updateFoodShopDto.shop_name.length > 50) {
-      throw new BadRequestException('50 文字以内で入力してください');
-    }
-    if (!['Publish', 'Pending'].includes(updateFoodShopDto.status)) {
-      throw new BadRequestException('Invalid status value.');
-    }
-    try {
+      const validationResult = this.appService.validateShopInformation(updateFoodShopDto.shop_name, updateFoodShopDto.contract_status);
+      if (typeof validationResult === 'string') {
+        throw new BadRequestException(validationResult);
+      }
+      if (typeof updateFoodShopDto.shop_name !== 'string' || updateFoodShopDto.shop_name.length > 50) {
+        throw new BadRequestException('50 文字以内で入力してください');
+      }
+      if (!['Publish', 'Pending'].includes(updateFoodShopDto.status)) {
+        throw new BadRequestException('Invalid status value.');
+      }
       const user_id = updateFoodShopDto.user_id; // Assuming user_id is part of the DTO
       const contract_status = updateFoodShopDto.contract_status; // Assuming contract_status is part of the DTO
       const shop_name = updateFoodShopDto.shop_name;
       const status = updateFoodShopDto.status;
-      const result = await this.appService.updateFoodShop(food_shop_id.toString(), user_id, contract_status, shop_name, status);
-      return { status: 200, message: result || 'Editing completed' }; // Use result from new code or fallback to existing message
+      await this.appService.updateFoodShop(food_shop_id.toString(), updateFoodShopDto);
+      return { status: 200, message: 'Editing completed' };
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof BadRequestException || error.status === HttpStatus.UNPROCESSABLE_ENTITY) {
         throw new HttpException('Wrong format.', HttpStatus.UNPROCESSABLE_ENTITY);
       }
       this.logger.error(`Failed to update food shop: ${error.message}`, error.stack);

@@ -32,7 +32,7 @@ export class AppService {
   }
 
   validateShopInformation(shopName: string, contractStatus: string): boolean | string {
-    if (typeof shopName !== 'string' || shopName.length > 50) {
+    if (typeof shopName !== 'string' || shopName.length === 0 || shopName.length > 50) {
       return '50 文字以内で入力してください';
     }
 
