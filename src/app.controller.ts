@@ -50,10 +50,14 @@ export class AppController {
       throw new BadRequestException('Invalid status value.');
     }
     try {
-      await this.appService.updateFoodShop(food_shop_id.toString(), updateFoodShopDto);
-      return { status: 200, message: 'Editing completed' };
+      const user_id = updateFoodShopDto.user_id; // Assuming user_id is part of the DTO
+      const contract_status = updateFoodShopDto.contract_status; // Assuming contract_status is part of the DTO
+      const shop_name = updateFoodShopDto.shop_name;
+      const status = updateFoodShopDto.status;
+      const result = await this.appService.updateFoodShop(food_shop_id.toString(), user_id, contract_status, shop_name, status);
+      return { status: 200, message: result || 'Editing completed' }; // Use result from new code or fallback to existing message
     } catch (error) {
-      if (error.status === HttpStatus.UNPROCESSABLE_ENTITY) {
+      if (error instanceof BadRequestException) {
         throw new HttpException('Wrong format.', HttpStatus.UNPROCESSABLE_ENTITY);
       }
       this.logger.error(`Failed to update food shop: ${error.message}`, error.stack);

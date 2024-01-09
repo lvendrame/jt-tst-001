@@ -1,4 +1,11 @@
-import { Injectable, BadRequestException, InternalServerErrorException, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FoodShop } from './entities/food-shop.entity'; // Assuming the entity exists
@@ -24,12 +31,12 @@ export class AppService {
     };
   }
 
-  validateShopInformation(shop_name: string, contract_status: string): boolean | string {
-    if (typeof shop_name !== 'string' || shop_name.length > 50) {
+  validateShopInformation(shopName: string, contractStatus: string): boolean | string {
+    if (typeof shopName !== 'string' || shopName.length > 50) {
       return '50 文字以内で入力してください';
     }
 
-    const contractStatusBoolean = contract_status.toLowerCase() === 'yes' ? true : contract_status.toLowerCase() === 'no' ? false : null;
+    const contractStatusBoolean = contractStatus.toLowerCase() === 'yes' ? true : contractStatus.toLowerCase() === 'no' ? false : null;
     if (contractStatusBoolean === null) {
       return 'contract_status must be a boolean value (Yes/No)';
     }
@@ -55,40 +62,46 @@ export class AppService {
 
     const foodShop = await this.foodShopRepository.findOne(foodShopId);
     if (!foodShop || foodShop.status !== FoodShopStatus.Pending) {
-      throw new Error("This shop can't be edited");
+      throw new HttpException("This shop can't be edited", HttpStatus.FORBIDDEN);
     }
     if (foodShop.user_id.toString() !== userId) {
-      throw new Error("Insufficient permissions to edit this shop");
+      throw new HttpException("Insufficient permissions to edit this shop", HttpStatus.FORBIDDEN);
     }
     return true;
   }
 
-  async updateFoodShop(food_shop_id: string, user_id: string, contract_status: string, shop_name: string, status: FoodShopStatus): Promise<string> {
+  async updateFoodShop(
+    foodShopId: string,
+    userId: string,
+    contractStatus: string,
+    shopName: string,
+    status: FoodShopStatus
+  ): Promise<string> {
     try {
-      const foodShop = await this.foodShopRepository.findOne({ where: { id: food_shop_id, user_id: user_id } });
+      const foodShop = await this.foodShopRepository.findOne({
+        where: {
+          id: foodShopId,
+          user_id: userId,
+        },
+      });
       if (!foodShop) {
         return 'Food shop not found';
       }
 
-      const validationResult = this.validateShopInformation(shop_name, contract_status);
+      const validationResult = this.validateShopInformation(shopName, contractStatus);
       if (validationResult !== true) {
         return validationResult as string;
       }
 
-      try {
-        foodShop.contract_status = contract_status.toLowerCase() === 'yes';
-        foodShop.shop_name = shop_name;
-        foodShop.status = status;
+      foodShop.contract_status = contractStatus.toLowerCase() === 'yes';
+      foodShop.shop_name = shopName;
+      foodShop.status = status;
 
-        await this.foodShopRepository.save(foodShop);
-        return 'Editing completed';
-      } catch (error) {
-        Logger.error(error);
-        throw new InternalServerErrorException('Internal server error');
-      }
+      await this.foodShopRepository.save(foodShop);
+      return 'Editing completed';
     } catch (error) {
       Logger.error(error);
-      return 'Internal server error';
+      throw new InternalServerErrorException('Internal server error');
     }
   }
 
