@@ -1,6 +1,10 @@
-class FoodShopService::Update < BaseService
+
+require_relative '../../models/food_shop'
+require_relative '../base_service.rb'
+
+module FoodShopService
   class Update < BaseService
-    def call(food_shop_id, contract_status, shop_name, status)
+    def call(food_shop_id:, contract_status:, shop_name:, status:)
       ActiveRecord::Base.transaction do
         food_shop = FoodShop.find_by(id: food_shop_id)
         raise ActiveRecord::RecordNotFound, "FoodShop not found" unless food_shop
@@ -19,14 +23,11 @@ class FoodShopService::Update < BaseService
           status: status
         )
       end
-      "Editing completed"
+      OpenStruct.new(success?: true, error: nil, status: 200, message: "Editing completed")
     rescue => e
       ActiveRecord::Rollback
       log_error(e)
-      OpenStruct.new(success?: false, error: e.message).to_h
+      OpenStruct.new(success?: false, error: e.message, status: 500, message: 'Internal server error')
     end
   end
 end
-
-# Import BaseService
-require_relative '../base_service.rb'
