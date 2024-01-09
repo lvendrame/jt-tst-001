@@ -38,6 +38,10 @@ export class AppService {
   }
 
   async checkEditPermission(userId: string, foodShopId: string): Promise<boolean> {
+    if (isNaN(Number(foodShopId))) {
+      throw new BadRequestException('Wrong format.');
+    }
+
     const foodShop = await this.foodShopRepository.findOne(foodShopId);
     if (!foodShop || foodShop.status !== FoodShopStatus.Pending) {
       throw new Error("This shop can't be edited");

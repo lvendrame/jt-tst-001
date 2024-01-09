@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Body, Param, HttpException, HttpStatus, InternalServerErrorException, ParseIntPipe, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  HttpException,
+  HttpStatus,
+  InternalServerErrorException,
+  BadRequestException,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { UpdateFoodShopDto } from './dto/update-food-shop.dto'; // Assuming the DTO exists
 
@@ -12,7 +24,9 @@ export class AppController {
   }
 
   @Get(':food_shop_id')
-  getFoodShopDetails(@Param('food_shop_id') foodShopId: string): Promise<{ contract_status: string; shop_name: string; status: string; }> {
+  getFoodShopDetails(
+    @Param('food_shop_id') foodShopId: string,
+  ): Promise<{ contract_status: string; shop_name: string; status: string }> {
     return this.appService.getFoodShopDetails(foodShopId);
   }
 
@@ -20,7 +34,7 @@ export class AppController {
   async updateFoodShop(
     @Param('id', ParseIntPipe) food_shop_id: number,
     @Body() updateFoodShopDto: UpdateFoodShopDto,
-  ): Promise<{ status: number; message: string; }> {
+  ): Promise<{ status: number; message: string }> {
     if (typeof updateFoodShopDto.shop_name !== 'string' || updateFoodShopDto.shop_name.length > 50) {
       throw new BadRequestException('50 文字以内で入力してください');
     }
@@ -38,8 +52,29 @@ export class AppController {
     }
   }
 
+  @Get(':id/edit_permission')
+  async checkEditPermission(
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: HttpStatus.BAD_REQUEST })) id: number,
+  ): Promise<{ permission: boolean }> {
+    try {
+      const hasPermission = await this.appService.checkEditPermission(id.toString());
+      if (!hasPermission) {
+        throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      }
+      return { permission: hasPermission };
+    } catch (error) {
+      if (error.status === HttpStatus.FORBIDDEN) {
+        throw error;
+      }
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Post('/check-user-edit-permission')
-  async checkUserEditPermission(@Body('userId') userId: string, @Body('foodShopId') foodShopId: string): Promise<boolean> {
+  async checkUserEditPermission(
+    @Body('userId') userId: string,
+    @Body('foodShopId') foodShopId: string,
+  ): Promise<boolean> {
     try {
       return await this.appService.checkEditPermission(userId, foodShopId);
     } catch (error) {
