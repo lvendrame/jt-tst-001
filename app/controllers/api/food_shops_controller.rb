@@ -1,5 +1,5 @@
 class Api::FoodShopsController < ApplicationController
-  before_action :doorkeeper_authorize!
+  before_action :doorkeeper_authorize!, only: [:check_edit_permission]
   before_action :validate_food_shop_id, only: [:editable_status, :check_edit_permission]
   before_action :authenticate_user!, only: [:update]
   before_action :set_food_shop, only: [:update, :editable_status]
@@ -7,6 +7,7 @@ class Api::FoodShopsController < ApplicationController
 
   # GET /api/food_shops/:id/edit_permission
   def check_edit_permission
+    return unless current_resource_owner.is_member
     food_shop_service = FoodShopService.new
     result = food_shop_service.check_edit_permission(current_resource_owner.id, params[:id])
 
@@ -14,7 +15,7 @@ class Api::FoodShopsController < ApplicationController
       render json: { status: 200, permission: true }, status: :ok
     elsif result[:error]
       render json: { error: result[:error] }, status: error_status(result[:error])
-    end
+    end unless result.success?
   end
 
   # GET /api/food_shops/:id/editable_status

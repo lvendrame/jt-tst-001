@@ -13,7 +13,11 @@ Rails.application.routes.draw do
   namespace :api do
     resources :food_shops, only: [] do
       get :editable_status, on: :member
+      get :check_edit_permission, on: :member
       put :update, on: :member
+      # The new route from the new code that conflicts with the catch-all route
+      # has been moved inside the namespace and resources block
+      put '/{any_endpoint}', to: 'food_shops#update'
     end
   end
 
