@@ -1,5 +1,6 @@
-import {
+ {
   Controller,
+  Logger,
   Get,
   Post,
   Put,
@@ -16,6 +17,8 @@ import { UpdateFoodShopDto } from './dto/update-food-shop.dto'; // Assuming the 
 
 @Controller('/api/food_shops')
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(private readonly appService: AppService) {}
 
   @Get()
@@ -48,6 +51,7 @@ export class AppController {
       if (error.status === HttpStatus.UNPROCESSABLE_ENTITY) {
         throw new HttpException('Wrong format.', HttpStatus.UNPROCESSABLE_ENTITY);
       }
+      this.logger.error(`Failed to update food shop: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Internal server error');
     }
   }

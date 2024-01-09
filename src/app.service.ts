@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+
+import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FoodShop } from './entities/food-shop.entity'; // Assuming the entity exists
@@ -64,12 +65,18 @@ export class AppService {
         return validationResult as string;
       }
 
-      foodShop.contract_status = contract_status.toLowerCase() === 'yes';
-      foodShop.shop_name = shop_name;
-      foodShop.status = status;
+      try {
+        // Existing update logic...
+        foodShop.contract_status = contract_status.toLowerCase() === 'yes';
+        foodShop.shop_name = shop_name;
+        foodShop.status = status;
 
-      await this.foodShopRepository.save(foodShop);
-      return 'Editing completed';
+        await this.foodShopRepository.save(foodShop);
+        return 'Editing completed';
+      } catch (error) {
+        Logger.error(error);
+        throw new InternalServerErrorException('Internal server error');
+      }
     } catch (error) {
       return 'Internal server error';
     }
