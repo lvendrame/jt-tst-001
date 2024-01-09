@@ -44,6 +44,21 @@ export class AppService {
     return true;
   }
 
+  async handleInternalServerError(foodShopId: string): Promise<void> {
+    if (isNaN(Number(foodShopId))) {
+      throw new HttpException('Invalid food shop ID format.', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const foodShop = await this.foodShopRepository.findOne(foodShopId);
+      if (!foodShop) {
+        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      Logger.error(error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   async checkFoodShopEditableStatus(foodShopId: string): Promise<void> {
     const foodShop = await this.foodShopRepository.findOne(foodShopId);
     if (!foodShop || foodShop.status !== FoodShopStatus.Pending) {

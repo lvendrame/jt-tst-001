@@ -33,6 +33,27 @@ export class AppController {
     return this.appService.getFoodShopDetails(foodShopId);
   }
 
+  @Get(':id/error_handling')
+  async handleInternalServerError(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ status: number; message: string }> {
+    try {
+      const foodShop = await this.appService.getFoodShopDetails(id.toString());
+      if (!foodShop) {
+        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
+      }
+      // Assuming handleInternalServerError is a method that might throw an error
+      await this.appService.handleInternalServerError(id.toString());
+      return { status: 200, message: 'No internal server error occurred.' };
+    } catch (error) {
+      if (error.status === HttpStatus.NOT_FOUND) {
+        throw error;
+      }
+      this.logger.error(`Internal server error: ${error.message}`, error.stack);
+      throw new InternalServerErrorException({ status: 500, message: 'Internal server error' });
+    }
+  }
+
   @Put(':id')
   async updateFoodShop(
     @Param('id', ParseIntPipe) food_shop_id: number,
