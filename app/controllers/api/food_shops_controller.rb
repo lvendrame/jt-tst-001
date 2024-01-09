@@ -1,5 +1,5 @@
 class Api::FoodShopsController < ApplicationController
-  # before_action :doorkeeper_authorize!
+  before_action :doorkeeper_authorize!
   before_action :authenticate_user!, only: [:update]
   before_action :set_food_shop, only: [:update]
   before_action :validate_food_shop_id, only: [:check_edit_permission]
@@ -18,18 +18,24 @@ class Api::FoodShopsController < ApplicationController
   end
 
   def update
+    # Validate the user's permission to update the food shop
+    if @food_shop.status != 'Pending'
+      render json: { error: 'Insufficient permissions to edit this shop' }, status: :forbidden
+      return
+    end
+
     begin
       ActiveRecord::Base.transaction do
         contract_status = ActiveRecord::Type::Boolean.new.cast(params[:contract_status])
-        status = params[:status]
+        status = params[:status].capitalize
 
         authorize @food_shop, policy_class: FoodShopPolicy
 
-        unless params[:id].is_a?(Numeric)
+        unless params[:id].match?(/\A\d+\z/)
           raise ArgumentError, 'Invalid food shop ID format.'
         end
 
-        if params[:shop_name].length > 50
+        if params[:shop_name].length > 50 # This validation is already handled by the model
           raise ArgumentError, 'Please enter within 50 characters.'
         end
 
@@ -38,7 +44,7 @@ class Api::FoodShopsController < ApplicationController
         raise ArgumentError, 'Invalid status value.' unless %w[Publish Pending].include?(status)
 
         @food_shop.update!(
-          contract_status: contract_status,
+          contract_status: contract_status, # This validation is already handled by the model
           shop_name: params[:shop_name],
           status: status
         )
@@ -46,7 +52,7 @@ class Api::FoodShopsController < ApplicationController
       render json: { message: 'Editing completed' }, status: :ok
     rescue ActiveRecord::RecordNotFound
       render json: { error: 'Food shop not found' }, status: :not_found
-    rescue ArgumentError => e
+    rescue ArgumentError => e # This block is handling validation errors
       render json: { error: e.message }, status: :unprocessable_entity
     rescue ActiveRecord::RecordInvalid => e
       render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
@@ -55,14 +61,14 @@ class Api::FoodShopsController < ApplicationController
 
   private
 
-  def set_food_shop
+  def set_food_shop # This method is setting the food shop instance variable
     @food_shop = FoodShop.find(params[:food_shop_id])
   end
 
   def validate_food_shop_id
     unless params[:id].match?(/\A\d+\z/)
       render json: { error: 'Invalid food shop ID format.' }, status: :bad_request
-    end
+    end # This method is validating the food shop ID format
   end
 
   def error_status(error_message)
@@ -74,7 +80,7 @@ class Api::FoodShopsController < ApplicationController
   end
 
   def handle_internal_server_error(exception)
-    log_error(exception) # Use the method from ApplicationController
+    log_error(exception)
     render json: {
       status: 500,
       error: "Internal server error"
@@ -83,6 +89,5 @@ class Api::FoodShopsController < ApplicationController
 
   def log_error(exception)
     Rails.logger.error "Internal Server Error: #{exception.message}" # Log the error
-    # Example: Rails.logger.error(exception.message)
   end
 end
