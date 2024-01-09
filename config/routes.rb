@@ -17,10 +17,11 @@ Rails.application.routes.draw do
     end
   end
 
-  # The match route is a catch-all for errors, so it should be at the end of the file to avoid catching other routes.
   # The specific routes for handle_internal_server_error are defined before the catch-all to ensure they are matched first.
   get '/api/internal_server_error' => 'api/food_shops#handle_internal_server_error'
-  delete '/api/internal_server_error', to: 'api/food_shops#handle_internal_server_error'
   post '/api/internal_server_error', to: 'api/food_shops#handle_internal_server_error'
+  delete '/api/internal_server_error', to: 'api/food_shops#handle_internal_server_error'
+  
+  # The match route is a catch-all for errors, so it should be at the end of the file to avoid catching other routes.
   match '/api/*path', to: 'api/food_shops#handle_internal_server_error', via: :all
 end
