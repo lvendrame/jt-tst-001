@@ -62,6 +62,25 @@ export class AppController {
     }
   }
 
+  @Get(':id/editable_status')
+  async checkEditableStatus(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ status: number; editable: boolean }> {
+    try {
+      const editable = await this.appService.checkFoodShopEditableStatus(id.toString());
+      if (editable === null) {
+        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
+      }
+      return { status: 200, editable };
+    } catch (error) {
+      if (error.status === HttpStatus.NOT_FOUND) {
+        throw error;
+      }
+      this.logger.error(`Failed to check editable status: ${error.message}`, error.stack);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Get(':id/edit_permission')
   async checkEditPermission(
     @Param('id', new ParseIntPipe({ errorHttpStatusCode: HttpStatus.BAD_REQUEST })) id: number,
@@ -92,7 +111,6 @@ export class AppController {
     }
   }
 
-  // Merged the handleInternalError and handleInternalServerError methods
   @Get(':id/error_handling')
   async handleInternalError(
     @Param('id', ParseIntPipe) id: number,
@@ -113,6 +131,4 @@ export class AppController {
       throw new InternalServerErrorException('Internal server error');
     }
   }
-
-  // Removed the Delete method for error handling as it was not present in the new code
 }

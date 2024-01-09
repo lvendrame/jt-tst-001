@@ -5,6 +5,7 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -24,6 +25,9 @@ export class AppService {
 
   async getFoodShopDetails(foodShopId: string): Promise<{ contract_status: string; shop_name: string; status: string; }> {
     const foodShop = await this.foodShopRepository.findOne(foodShopId);
+    if (!foodShop) {
+      throw new NotFoundException('Food shop not found.');
+    }
     return {
       contract_status: foodShop.contract_status ? 'Active' : 'Inactive',
       shop_name: foodShop.shop_name,
@@ -44,30 +48,18 @@ export class AppService {
     return true;
   }
 
-  async handleInternalServerError(foodShopId: string): Promise<void> {
-    if (isNaN(Number(foodShopId))) {
-      throw new HttpException('Invalid food shop ID format.', HttpStatus.BAD_REQUEST);
+  async checkFoodShopEditableStatus(foodShopId: string): Promise<boolean> {
+    const foodShop = await this.foodShopRepository.findOne({ where: { id: foodShopId } });
+    if (!foodShop) {
+      throw new NotFoundException('Food shop not found.');
     }
-    try {
-      const foodShop = await this.foodShopRepository.findOne(foodShopId);
-      if (!foodShop) {
-        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
-      }
-    } catch (error) {
-      Logger.error(error);
-      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  async checkFoodShopEditableStatus(foodShopId: string): Promise<void> {
-    const foodShop = await this.foodShopRepository.findOne(foodShopId);
-    if (!foodShop || foodShop.status !== FoodShopStatus.Pending) {
+    if (foodShop.status !== FoodShopStatus.Pending) {
       throw new HttpException(
         "This shop can't be edited",
         HttpStatus.BAD_REQUEST,
       );
     }
-    // If the status is "Pending", the method ends here, indicating the shop is editable
+    return true;
   }
 
   async checkEditPermission(userId: string, foodShopId: string): Promise<boolean> {
@@ -132,7 +124,7 @@ export class AppService {
     try {
       const foodShop = await this.foodShopRepository.findOne(id);
       if (!foodShop) {
-        throw new HttpException('Food shop not found.', HttpStatus.NOT_FOUND);
+        throw new NotFoundException('Food shop not found.');
       }
 
       await this.foodShopRepository.remove(foodShop);
