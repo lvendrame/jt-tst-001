@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
 import { AppService } from './app.service';
 import { UpdateFoodShopDto } from './dto/update-food-shop.dto'; // Assuming the DTO exists
 
@@ -25,6 +25,15 @@ export class AppController {
       return await this.appService.updateFoodShop(food_shop_id, updateFoodShopDto);
     } catch (error) {
       throw new InternalServerErrorException('Internal server error');
+    }
+  }
+
+  @Post('/check-user-edit-permission')
+  async checkUserEditPermission(@Body('userId') userId: string, @Body('foodShopId') foodShopId: string): Promise<boolean> {
+    try {
+      return await this.appService.checkEditPermission(userId, foodShopId);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.FORBIDDEN);
     }
   }
 }
