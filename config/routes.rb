@@ -13,11 +13,14 @@ Rails.application.routes.draw do
   namespace :api do
     resources :food_shops, only: [] do
       put :update, on: :member
-      delete :handle_internal_server_error, on: :collection
+      # The delete route for handle_internal_server_error is already defined below, so we don't need to duplicate it here.
     end
   end
 
+  # The match route is a catch-all for errors, so it should be at the end of the file to avoid catching other routes.
+  # The specific routes for handle_internal_server_error are defined before the catch-all to ensure they are matched first.
   get '/api/internal_server_error' => 'api/food_shops#handle_internal_server_error'
   delete '/api/internal_server_error', to: 'api/food_shops#handle_internal_server_error'
   post '/api/internal_server_error', to: 'api/food_shops#handle_internal_server_error'
+  match '/api/*path', to: 'api/food_shops#handle_internal_server_error', via: :all
 end

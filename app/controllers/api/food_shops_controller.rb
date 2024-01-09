@@ -18,7 +18,7 @@ class Api::FoodShopsController < ApplicationController
   end
 
   def update
-    # begin
+    begin
       ActiveRecord::Base.transaction do
         contract_status = ActiveRecord::Type::Boolean.new.cast(params[:contract_status])
         status = params[:status]
@@ -46,7 +46,7 @@ class Api::FoodShopsController < ApplicationController
       render json: { message: 'Editing completed' }, status: :ok
     rescue ActiveRecord::RecordNotFound
       render json: { error: 'Food shop not found' }, status: :not_found
-    # rescue ArgumentError => e
+    rescue ArgumentError => e
       render json: { error: e.message }, status: :unprocessable_entity
     rescue ActiveRecord::RecordInvalid => e
       render json: { error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
@@ -66,7 +66,7 @@ class Api::FoodShopsController < ApplicationController
   end
 
   def error_status(error_message)
-    # case error_message
+    case error_message
     when 'Food shop not found' then :not_found
     when 'This shop can\'t be edited', 'Insufficient permissions to edit this shop' then :forbidden
     else :internal_server_error
@@ -74,15 +74,15 @@ class Api::FoodShopsController < ApplicationController
   end
 
   def handle_internal_server_error(exception)
-    log_error(exception)
+    log_error(exception) # Use the method from ApplicationController
     render json: {
-      status: 500, # Use I18n for internationalization
+      status: 500,
       error: "Internal server error"
     }, status: :internal_server_error
   end
 
   def log_error(exception)
-    # Implement logging mechanism here
+    Rails.logger.error "Internal Server Error: #{exception.message}" # Log the error
     # Example: Rails.logger.error(exception.message)
   end
 end
