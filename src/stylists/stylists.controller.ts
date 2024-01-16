@@ -1,11 +1,11 @@
-import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException, Put } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
 import { ResetPasswordDto } from './dto/reset-password.dto'; // Assuming ResetPasswordDto exists and matches the requirement
 import { UpdateSessionDto } from '../auth/dto/update-session.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { MaintainSessionDto } from './dto/maintain-session.dto'; // Assuming MaintainSessionDto exists
 
-@Controller('stylists')
+@Controller('api/stylists') // Updated to match the new code's route
 export class StylistsController {
   constructor(private readonly stylistsService: StylistsService) {}
 
@@ -25,7 +25,6 @@ export class StylistsController {
     }
   }
 
-  // New endpoint added for resetting the password
   @Post('/password/reset')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     // Validate the input parameters
@@ -61,12 +60,26 @@ export class StylistsController {
     }
   }
 
-  @Post('/update-session-expiry')
+  // The PUT method is used here instead of POST to match the new code's method
+  @Put('/session/update')
   async updateSessionExpiry(@Body() updateSessionDto: UpdateSessionDto) {
+    if (!updateSessionDto.session_token) {
+      throw new HttpException('Session token is required.', HttpStatus.BAD_REQUEST);
+    }
+    if (typeof updateSessionDto.keep_session_active !== 'boolean') {
+      throw new HttpException('Keep session active must be a boolean.', HttpStatus.BAD_REQUEST);
+    }
     try {
-      return await this.stylistsService.updateSessionExpiry(updateSessionDto.session_token, updateSessionDto.keep_session_active);
+      const result = await this.stylistsService.updateSessionExpiry(updateSessionDto.session_token, updateSessionDto.keep_session_active);
+      return { statusCode: 200, ...result };
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to update session expiry.', HttpStatus.BAD_REQUEST);
+      if (error.status === HttpStatus.NOT_FOUND) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
