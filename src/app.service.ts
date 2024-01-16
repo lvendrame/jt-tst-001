@@ -30,6 +30,13 @@ export class AppService {
     return { session_maintained: true };
   }
 
+  cancelLoginProcess(): { login_cancelled: boolean } {
+    // Simulate logging the attempt in the database
+    // TODO: Implement actual database logging with timestamp, success status, and stylist_id
+    console.log('Login process cancelled at timestamp:', new Date().getTime());
+    return { login_cancelled: true };
+  }
+
   getHello(): string {
     return 'Hello World!';
   }

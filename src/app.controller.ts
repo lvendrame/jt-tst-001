@@ -1,4 +1,3 @@
-
 import { Controller, Get, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MaintainSessionDto } from './dto/maintain-session.dto'; // Assuming MaintainSessionDto exists
@@ -10,6 +9,11 @@ export class AppController {
   @Get()
   getHello(): string {
     return this.appService.getHello();
+  }
+
+  @Get('/cancel-login')
+  cancelLogin(): { login_cancelled: boolean } {
+    return this.appService.cancelLoginProcess();
   }
 
   @Post('maintain-session')
