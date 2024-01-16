@@ -1,5 +1,4 @@
-
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Stylist } from './entities/stylist.entity';
@@ -17,18 +16,25 @@ export class StylistsService {
     private emailService: EmailService,
   ) {}
 
-  async requestPasswordReset(email: string): Promise<{ reset_token_sent: boolean }> {
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      throw new Error('Invalid email address.');
+  async requestPasswordReset(email: string): Promise<{ status: number; message: string }> {
+    if (!email) {
+      throw new HttpException('Email is required.', HttpStatus.BAD_REQUEST);
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      throw new HttpException('Invalid email format.', HttpStatus.BAD_REQUEST);
     }
     const stylist = await this.stylistRepository.findOne({ where: { email } });
     if (!stylist) {
-      return { reset_token_sent: false };
+      throw new HttpException('The email is not associated with any stylist account.', HttpStatus.NOT_FOUND);
     }
     const token = randomBytes(32).toString('hex');
     const expiration = new Date(new Date().getTime() + 60 * 60 * 1000); // 1 hour from now
     await this.passwordResetTokenRepository.save({ stylist_id: stylist.id, token, expires_at: expiration });
     const emailSent = await this.emailService.sendPasswordResetEmail(email, token);
-    return { reset_token_sent: emailSent };
+    if (emailSent) {
+      return { status: HttpStatus.OK, message: 'Password reset email sent successfully.' };
+    } else {
+      throw new HttpException('Failed to send password reset email.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
