@@ -1,7 +1,9 @@
+
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { Stylist } from '../entities/stylists';
+import { LoginAttempt } from '../entities/login-attempts'; // Assuming the entity is imported correctly
 import * as bcrypt from 'bcrypt';
 import { getRepository } from 'typeorm';
 
@@ -29,6 +31,19 @@ export class AuthService {
     }
 
     return { message: 'Login successful.' };
+  }
+
+  async logFailedLoginAttempt(email: string): Promise<void> {
+    const stylistRepository = getRepository(Stylist);
+    const stylist = await stylistRepository.findOne({ where: { email } });
+    if (stylist) {
+      const loginAttemptRepository = getRepository(LoginAttempt);
+      await loginAttemptRepository.save({
+        stylist_id: stylist.id,
+        attempted_at: new Date(),
+        successful: false,
+      });
+    }
   }
 
   async authenticateStylist(email: string, password: string, keepSessionActive?: boolean): Promise<{ sessionToken: string; sessionExpiry: Date; }> {

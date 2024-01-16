@@ -1,4 +1,3 @@
-
 import { Body, Controller, Post, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -13,18 +12,30 @@ export class AuthController {
     try {
       return await this.authService.validateStylistLogin(loginDto);
     } catch (error) {
-      throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+      await this.authService.logFailedLoginAttempt(loginDto.email);
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
   @Post('loginStylist')
-  async loginStylist(@Body() loginStylistDto: LoginStylistDto) {
-    const { sessionToken, sessionExpiry } = await this.authService.authenticateStylist(
-      loginStylistDto.email,
-      loginStylistDto.password,
-      loginStylistDto.keepSessionActive,
-    );
-    return { sessionToken, sessionExpiry };
+  async loginStylist(@Body() loginStylistDto: LoginStylistDto): Promise<{ sessionToken: string, sessionExpiry: Date }> {
+    try {
+      const { sessionToken, sessionExpiry } = await this.authService.authenticateStylist(
+        loginStylistDto.email,
+        loginStylistDto.password,
+        loginStylistDto.keepSessionActive,
+      );
+      return { sessionToken, sessionExpiry };
+    } catch (error) {
+      await this.authService.logFailedLoginAttempt(loginStylistDto.email);
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   @Post('cancelLogin')
