@@ -12,6 +12,7 @@ export class LoginAttempt {
   @Column({ type: 'boolean', nullable: false, default: false })
   success: boolean;
 
+  // Resolved conflict: Removed duplicate @Column decorator and used 'bigint' type as it is more appropriate for timestamps.
   @Column({ type: 'bigint', nullable: false })
   timestamp: number;
 

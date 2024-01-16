@@ -1,4 +1,3 @@
-
 import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginStylistDto } from './dto/login-stylist.dto';
@@ -10,6 +9,12 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly loginAttemptsService: LoginAttemptsService
   ) {}
+
+  @Post('login_cancel')
+  async cancelLoginProcess() {
+    await this.loginAttemptsService.logCancellationAttempt();
+    return { login_cancelled: true };
+  }
 
   @Post('loginStylist')
   async loginStylist(@Body() loginStylistDto: LoginStylistDto) {

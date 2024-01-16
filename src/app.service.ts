@@ -1,9 +1,8 @@
-
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Stylist } from './entities/stylist.entity';
-import { StylistRepository } from './auth/stylist.repository';
+import { LoginAttempt } from './login_attempts/login_attempts.entity';
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 const NINETY_DAYS_IN_MILLISECONDS = 90 * DAY_IN_MILLISECONDS;
@@ -11,8 +10,8 @@ const NINETY_DAYS_IN_MILLISECONDS = 90 * DAY_IN_MILLISECONDS;
 @Injectable()
 export class AppService {
   constructor(
-    @InjectRepository(Stylist)
-    private stylistRepository: Repository<Stylist>,
+    @InjectRepository(LoginAttempt) private loginAttemptRepository: Repository<LoginAttempt>,
+    @InjectRepository(Stylist) private stylistRepository: Repository<Stylist>,
   ) {}
 
   async maintainSession(sessionToken: string): Promise<{ session_maintained: boolean }> {
@@ -32,9 +31,24 @@ export class AppService {
     return { session_maintained: true };
   }
 
+  async logCancellationAttempt(): Promise<void> {
+    try {
+      const loginAttempt = new LoginAttempt();
+      loginAttempt.success = false;
+      loginAttempt.timestamp = new Date().getTime(); // Current timestamp
+      loginAttempt.stylist_id = null; // Stylist ID is not available
+
+      await this.loginAttemptRepository.save(loginAttempt);
+    } catch (error) {
+      console.error('Error logging cancellation attempt:', error);
+      throw error;
+    }
+  }
+
   cancelLoginProcess(): { login_cancelled: boolean } {
-    // Simulate logging the attempt in the database
-    // TODO: Implement actual database logging with timestamp, success status, and stylist_id
+    // Log the cancellation attempt
+    this.logCancellationAttempt();
+
     console.log('Login process cancelled at timestamp:', new Date().getTime());
     return { login_cancelled: true };
   }

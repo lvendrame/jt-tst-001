@@ -12,8 +12,13 @@ export class AppController {
   }
 
   @Get('/cancel-login')
-  cancelLogin(): { login_cancelled: boolean } {
-    return this.appService.cancelLoginProcess();
+  async cancelLogin(): Promise<{ login_cancelled: boolean }> {
+    try {
+      await this.appService.logCancellationAttempt();
+      return { login_cancelled: true };
+    } catch (error) {
+      throw new HttpException('An error occurred while logging the cancellation attempt', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Post('maintain-session')
