@@ -1,5 +1,7 @@
+
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MaintainSessionDto } from './dto/maintain-session.dto'; // Added import
 import { Repository } from 'typeorm';
 import { Stylist } from './entities/stylist.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -37,4 +39,28 @@ export class StylistsService {
       throw new HttpException('Failed to send password reset email.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async maintainSession(maintainSessionDto: MaintainSessionDto): Promise<{ session_maintained: boolean }> {
+    const { session_token, keep_session_active } = maintainSessionDto;
+    if (!session_token) {
+      throw new HttpException('Session token is required.', HttpStatus.BAD_REQUEST);
+    }
+    const stylist = await this.stylistRepository.findOne({ where: { session_token } });
+    if (!stylist) {
+      return { session_maintained: false };
+    }
+    const currentTime = new Date();
+    if (stylist.session_expiration > currentTime) {
+      const newExpiration = new Date(
+        currentTime.getTime() + (keep_session_active ? 90 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000)
+      );
+      stylist.session_expiration = newExpiration;
+      await this.stylistRepository.save(stylist);
+      return { session_maintained: true };
+    } else {
+      return { session_maintained: false };
+    }
+  }
+
+  // Other methods...
 }

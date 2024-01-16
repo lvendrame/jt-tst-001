@@ -1,5 +1,7 @@
+
 import { Controller, Post, Body, HttpStatus, HttpCode, HttpException } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
+import { MaintainSessionDto } from './dto/maintain-session.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 
 @Controller('stylists')
@@ -47,5 +49,22 @@ export class StylistsController {
   private validateEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  @Post('maintain_session')
+  @HttpCode(HttpStatus.OK)
+  async maintainSession(@Body() maintainSessionDto: MaintainSessionDto) {
+    try {
+      const result = await this.stylistsService.maintainSession(maintainSessionDto);
+      if (result.session_maintained) {
+        return {
+          status: HttpStatus.OK,
+          message: 'Session maintained successfully.'
+        };
+      }
+      throw new HttpException('Session maintenance failed', HttpStatus.BAD_REQUEST);
+    } catch (error) {
+      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

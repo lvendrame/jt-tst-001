@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Stylist } from './entities/stylist.entity';
+import { StylistRepository } from './auth/stylist.repository';
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 const NINETY_DAYS_IN_MILLISECONDS = 90 * DAY_IN_MILLISECONDS;
@@ -14,7 +16,7 @@ export class AppService {
   ) {}
 
   async maintainSession(sessionToken: string): Promise<{ session_maintained: boolean }> {
-    if (!sessionToken) {
+    if (!sessionToken || sessionToken.trim() === '') {
       return { session_maintained: false };
     }
 
