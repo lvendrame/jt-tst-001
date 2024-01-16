@@ -1,6 +1,7 @@
 import { Controller, Post, Body, BadRequestException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { PasswordResetRequestDto } from './dto/password-reset-request.dto'; // This import is not used in the code
 
 @Controller('auth')
 export class AuthController {
@@ -11,10 +12,8 @@ export class AuthController {
     try {
       let user;
       if (body.loginDto) {
-        // Existing code path
         user = await this.authService.login(body.loginDto);
       } else if (body.email && body.password) {
-        // New code path
         user = await this.authService.validateUser(body.email, body.password);
       } else {
         throw new BadRequestException('Invalid request body');
@@ -49,5 +48,34 @@ export class AuthController {
     }
   }
 
-  // other handlers...
+  @Post('password_reset/stylist')
+  async requestPasswordReset(@Body() body: { email?: string }) {
+    if (!body.email) {
+      throw new BadRequestException('Email is required.');
+    }
+    if (!this.validateEmailFormat(body.email)) {
+      throw new BadRequestException('Invalid email format.');
+    }
+    try {
+      const response = await this.authService.requestPasswordReset({ email: body.email });
+      return {
+        status: HttpStatus.OK,
+        message: 'Password reset request successful',
+        reset_token: response.reset_token,
+        token_expiration: response.token_expiration
+      };
+    } catch (error) {
+      throw new HttpException({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: 'Failed to process password reset request.',
+      }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private validateEmailFormat(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  // ... other handlers from existing code if any ...
 }
