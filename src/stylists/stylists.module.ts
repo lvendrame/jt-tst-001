@@ -1,4 +1,3 @@
-``````
 import { Module } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
 import { StylistsController } from './stylists.controller';
@@ -8,4 +7,3 @@ import { StylistsController } from './stylists.controller';
   controllers: [StylistsController],
 })
 export class StylistsModule {}
-``````

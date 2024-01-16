@@ -1,4 +1,3 @@
-
 import { Controller, Post, Body, HttpStatus, HttpCode, HttpException } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
@@ -15,5 +14,14 @@ export class StylistsController {
       return result;
     }
     throw new HttpException('Password reset request failed', HttpStatus.BAD_REQUEST);
+  }
+
+  @Post('login_cancel')
+  @HttpCode(HttpStatus.OK)
+  cancelLoginProcess() {
+    return {
+      status: HttpStatus.OK,
+      message: 'You have returned to the previous screen.'
+    };
   }
 }
