@@ -1,4 +1,3 @@
-
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MaintainSessionDto } from './dto/maintain-session.dto'; // Added import
@@ -60,6 +59,17 @@ export class StylistsService {
     } else {
       return { session_maintained: false };
     }
+  }
+
+  async updateStylistSession(stylistId: number, sessionToken: string, sessionExpiration: Date, keepSessionActive: boolean): Promise<void> {
+    const stylist = await this.stylistRepository.findOne({ where: { id: stylistId } });
+    if (!stylist) {
+      throw new HttpException('Stylist not found.', HttpStatus.NOT_FOUND);
+    }
+    stylist.session_token = sessionToken;
+    stylist.session_expiration = sessionExpiration;
+    stylist.keep_session_active = keepSessionActive;
+    await this.stylistRepository.save(stylist);
   }
 
   // Other methods...

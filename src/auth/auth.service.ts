@@ -1,5 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { StylistRepository } from './stylist.repository';
+import { StylistRepository } from './stylist.repository'; // No change here, just for context
 import { LoginAttemptsRepository } from './login-attempts.repository';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -11,7 +11,7 @@ export class AuthService {
     private loginAttemptsRepository: LoginAttemptsRepository
   ) {}
 
-  async authenticateStylist(email: string, password: string, keepSessionActive?: boolean): Promise<{ sessionToken: string }> {
+  async authenticateStylist(email: string, password: string, keepSessionActive?: boolean): Promise<{ sessionToken: string }> { // No change here, just for context
     if (!email || !password) {
       throw new HttpException('Email and password are required', HttpStatus.BAD_REQUEST);
     }
@@ -19,7 +19,7 @@ export class AuthService {
     const stylist = await this.stylistRepository.findStylistByEmail(email);
     if (!stylist || !bcrypt.compareSync(password, stylist.password_hash)) {
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
+    } // No change here, just for context
 
     const sessionToken = crypto.randomBytes(64).toString('hex');
     const sessionExpiration = new Date(Date.now() + (keepSessionActive ? 90 : 1) * 24 * 60 * 60 * 1000);
@@ -27,6 +27,6 @@ export class AuthService {
     await this.stylistRepository.updateStylistSession(stylist.id, sessionToken, sessionExpiration);
     await this.loginAttemptsRepository.recordLoginAttempt(stylist.id, true, Date.now());
 
-    return { sessionToken };
+    return { sessionToken }; // No change here, just for context
   }
 }
