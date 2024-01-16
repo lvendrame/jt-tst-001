@@ -4,7 +4,7 @@ import { Stylist } from '../entities/stylist.entity';
 @EntityRepository(Stylist)
 export class StylistRepository extends Repository<Stylist> {
 
-  async findStylistByEmail(email: string): Promise<Stylist | null> {
+  async findStylistByEmail(email: string): Promise<Stylist | undefined> {
     return this.findOne({ where: { email } });
   }
 
