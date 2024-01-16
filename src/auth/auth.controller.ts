@@ -20,9 +20,8 @@ export class AuthController {
     }
   }
 
-  @Post('/api/stylists/login')
+  @Post('api/stylists/login')
   async loginStylist(@Body() loginStylistDto: LoginStylistDto): Promise<{ sessionToken: string, sessionExpiry: Date }> {
-    // Validation
     if (!loginStylistDto.email) {
       throw new BadRequestException('Email is required.');
     }
@@ -32,7 +31,6 @@ export class AuthController {
     if (!loginStylistDto.password) {
       throw new BadRequestException('Password is required.');
     }
-
     try {
       const { sessionToken, sessionExpiry } = await this.authService.authenticateStylist(
         loginStylistDto.email,

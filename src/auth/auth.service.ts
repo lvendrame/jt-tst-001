@@ -11,21 +11,51 @@ export class AuthService {
   constructor(private jwtService: JwtService) {}
 
   async validateStylistLogin(loginDto: LoginDto): Promise<{ message: string }> {
-    // This method seems to be unrelated to the new requirement and should remain unchanged.
-    ... existing code ...
-  }
+    const { email, password } = loginDto;
 
-  async logLoginAttempt(stylistId: number | null, successful: boolean): Promise<LoginAttempts> {
-    // This method seems to be unrelated to the new requirement and should remain unchanged.
-    ... existing code ...
-  }
-
-  async authenticateStylist(email: string, password: string, keepSessionActive?: boolean): Promise<{ sessionToken: string; sessionExpiry: Date; }> {
-    // Validation for email and password being blank is updated according to the requirement.
     if (!email) {
       throw new HttpException('Email is required.', HttpStatus.BAD_REQUEST);
     }
+    if (!password) {
+      throw new HttpException('Password is required.', HttpStatus.BAD_REQUEST);
+    }
 
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      throw new HttpException('Invalid email format.', HttpStatus.BAD_REQUEST);
+    }
+
+    const stylistRepository = getRepository(Stylist);
+    const stylist = await stylistRepository.findOne({ where: { email } });
+
+    if (!stylist) {
+      await this.logLoginAttempt(null, false);
+      throw new HttpException('Login failed. Invalid email or password.', HttpStatus.UNAUTHORIZED);
+    }
+
+    const isPasswordMatching = await bcrypt.compare(password, stylist.password_hash);
+    if (!isPasswordMatching) {
+      await this.logLoginAttempt(stylist.id, false);
+      throw new HttpException('Login failed. Invalid email or password.', HttpStatus.UNAUTHORIZED);
+    }
+
+    await this.logLoginAttempt(stylist.id, true);
+    return { message: 'Login successful.' };
+  }
+
+  async logLoginAttempt(stylistId: number | null, successful: boolean): Promise<LoginAttempts> {
+    const loginAttemptRepository = getRepository(LoginAttempts);
+    return await loginAttemptRepository.save({
+      stylist_id: stylistId,
+      attempted_at: new Date(),
+      successful: successful,
+    });
+  }
+
+  async authenticateStylist(email: string, password: string, keepSessionActive?: boolean): Promise<{ sessionToken: string; sessionExpiry: Date; }> {
+    if (!email) {
+      throw new HttpException('Email is required.', HttpStatus.BAD_REQUEST);
+    }
     if (!password) {
       throw new HttpException('Password is required.', HttpStatus.BAD_REQUEST);
     }
