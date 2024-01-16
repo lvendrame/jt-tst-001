@@ -16,6 +16,10 @@ export class UsersService {
     private emailService: EmailService,
   ) {}
 
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.usersRepository.findOne({ where: { email } });
+  }
+
   async maintainSession(sessionToken: string): Promise<any> {
     if (!sessionToken) {
       throw new Error('Session token must not be empty');
@@ -43,4 +47,6 @@ export class UsersService {
 
     return { reset_token, token_expiration };
   }
+
+  // ... other methods and code
 }
