@@ -1,6 +1,7 @@
+
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { LoginAttempt } from '../entities/login_attempts';
+import { LoginAttempts } from '../entities/login_attempts.entity'; // Updated import
 import { LoginDto } from './dto/login.dto';
 import { Stylist } from '../entities/stylists';
 import * as bcrypt from 'bcrypt';
@@ -17,7 +18,7 @@ export class AuthService {
       throw new HttpException('Email and password are required', HttpStatus.BAD_REQUEST);
     }
 
-    const loginAttemptRepository = getRepository(LoginAttempt);
+    const loginAttemptRepository = getRepository(LoginAttempts); // Updated to use LoginAttempts
     const stylistRepository = getRepository(Stylist);
     const stylist = await stylistRepository.findOne({ where: { email } });
 
@@ -26,7 +27,7 @@ export class AuthService {
       throw new HttpException('Login failed. Invalid email or password.', HttpStatus.UNAUTHORIZED);
     }
 
-    const isPasswordMatching = await bcrypt.compare(password, stylist.password_hash);
+    const isPasswordMatching = stylist && await bcrypt.compare(password, stylist.password_hash); // Updated condition
     if (!isPasswordMatching) {
       await this.logLoginAttempt(stylist.id, false);
       throw new HttpException('Login failed. Invalid email or password.', HttpStatus.UNAUTHORIZED);
@@ -36,9 +37,10 @@ export class AuthService {
     return { message: 'Login successful.' };
   }
 
-  async logLoginAttempt(stylistId: number | null, successful: boolean): Promise<void> {
-    const loginAttemptRepository = getRepository(LoginAttempt);
-    await loginAttemptRepository.save({
+  // Updated return type to Promise<LoginAttempts>
+  async logLoginAttempt(stylistId: number | null, successful: boolean): Promise<LoginAttempts> {
+    const loginAttemptRepository = getRepository(LoginAttempts);
+    return await loginAttemptRepository.save({
       stylist_id: stylistId,
       attempted_at: new Date(),
       successful: successful,
