@@ -29,8 +29,14 @@ export class StylistsService {
       throw new HttpException('The email is not associated with any stylist account.', HttpStatus.NOT_FOUND);
     }
     const token = randomBytes(32).toString('hex');
-    const expiration = new Date(new Date().getTime() + 60 * 60 * 1000); // 1 hour from now
-    await this.passwordResetTokenRepository.save({ stylist_id: stylist.id, token, expires_at: expiration });
+    const expires_at = new Date(new Date().getTime() + 60 * 60 * 1000); // 1 hour from now
+    const passwordResetToken = new PasswordResetToken();
+    passwordResetToken.token = token;
+    passwordResetToken.stylist = stylist;
+    passwordResetToken.expires_at = expires_at;
+    passwordResetToken.used = false;
+
+    await this.passwordResetTokenRepository.save(passwordResetToken);
     const emailSent = await this.emailService.sendPasswordResetEmail(email, token);
     if (emailSent) {
       return { status: HttpStatus.OK, message: 'Password reset email sent successfully.' };

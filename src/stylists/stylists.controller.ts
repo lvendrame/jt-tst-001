@@ -1,4 +1,3 @@
-
 import { Controller, Post, Body, HttpStatus, HttpCode, HttpException } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
 import { MaintainSessionDto } from './dto/maintain-session.dto';
@@ -25,12 +24,13 @@ export class StylistsController {
           message: 'Password reset email sent successfully.'
         };
       }
-      throw new HttpException('Password reset request failed', HttpStatus.BAD_REQUEST);
+      return { reset_token_sent: false };
     } catch (error) {
       if (error.status === HttpStatus.NOT_FOUND) {
         throw new HttpException('The email is not associated with any stylist account.', HttpStatus.NOT_FOUND);
-      }
-      if (error instanceof HttpException) {
+      } else if (error.status === HttpStatus.INTERNAL_SERVER_ERROR) {
+        return { reset_token_sent: false };
+      } else if (error instanceof HttpException) {
         throw error;
       }
       throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
