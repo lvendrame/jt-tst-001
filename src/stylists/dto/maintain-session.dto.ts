@@ -4,7 +4,6 @@ export class MaintainSessionDto {
   @IsNotEmpty({ message: 'Session token is required.' })
   session_token: string;
 
-  @IsBoolean()
+  @IsBoolean({ message: 'Invalid value for keep session active.' })
   keep_session_active: boolean = false;
 }
-

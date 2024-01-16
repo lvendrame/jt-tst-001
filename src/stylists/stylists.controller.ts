@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpStatus, HttpCode, HttpException, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, HttpStatus, HttpCode, HttpException, Put, UsePipes, ValidationPipe } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
 import { MaintainSessionDto } from './dto/maintain-session.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
@@ -68,6 +68,29 @@ export class StylistsController {
       }
       throw new HttpException('Session maintenance failed', HttpStatus.BAD_REQUEST);
     } catch (error) {
+      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put('session_maintenance')
+  @HttpCode(HttpStatus.OK)
+  async sessionMaintenance(@Body() maintainSessionDto: MaintainSessionDto) {
+    if (!maintainSessionDto.session_token) {
+      throw new HttpException('Session token is required.', HttpStatus.BAD_REQUEST);
+    }
+    if (typeof maintainSessionDto.keep_session_active !== 'boolean') {
+      throw new HttpException('Invalid value for keep session active.', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const newExpiration = await this.stylistsService.updateSessionExpiration(maintainSessionDto);
+      return {
+        status: HttpStatus.OK,
+        session_expiration: newExpiration
+      };
+    } catch (error) {
+      if (error.status === HttpStatus.UNAUTHORIZED) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
       throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

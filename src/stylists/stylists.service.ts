@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm'; // No change, just context
-import { MaintainSessionDto } from './dto/maintain-session.dto'; // Added import
+import { InjectRepository } from '@nestjs/typeorm';
+import { MaintainSessionDto } from './dto/maintain-session.dto';
 import { Repository } from 'typeorm';
 import { Stylist } from './entities/stylist.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -10,7 +10,6 @@ import { EmailService } from '../email/email.service';
 @Injectable()
 export class StylistsService {
   constructor(
-    // No change in constructor, just context
     @InjectRepository(Stylist)
     private stylistRepository: Repository<Stylist>,
     @InjectRepository(PasswordResetToken)
@@ -19,7 +18,7 @@ export class StylistsService {
   ) {}
 
   async requestPasswordReset(email: string): Promise<{ status: number; message: string }> {
-    if (!email) { // No change, just context
+    if (!email) {
       throw new HttpException('Email is required.', HttpStatus.BAD_REQUEST);
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
@@ -27,7 +26,7 @@ export class StylistsService {
     }
     const stylist = await this.stylistRepository.findOne({ where: { email } });
     if (!stylist) {
-      throw new HttpException('The email is not associated with any stylist account.', HttpStatus.NOT_FOUND); // No change, just context
+      throw new HttpException('The email is not associated with any stylist account.', HttpStatus.NOT_FOUND);
     }
     const token = randomBytes(32).toString('hex');
     const expires_at = new Date(new Date().getTime() + 60 * 60 * 1000); // 1 hour from now
@@ -35,7 +34,7 @@ export class StylistsService {
     passwordResetToken.token = token;
     passwordResetToken.stylist = stylist;
     passwordResetToken.expires_at = expires_at;
-    passwordResetToken.used = false; // No change, just context
+    passwordResetToken.used = false;
 
     await this.passwordResetTokenRepository.save(passwordResetToken);
     const emailSent = await this.emailService.sendPasswordResetEmail(email, token);
@@ -46,14 +45,14 @@ export class StylistsService {
     }
   }
 
-  async maintainSession(maintainSessionDto: MaintainSessionDto): Promise<{ session_maintained: boolean }> {
+  async maintainSession(maintainSessionDto: MaintainSessionDto): Promise<{ status: number; session_expiration: Date; session_maintained: boolean }> {
     const { session_token, keep_session_active } = maintainSessionDto;
     if (!session_token) {
       throw new HttpException('Session token is required.', HttpStatus.BAD_REQUEST);
     }
     const stylist = await this.stylistRepository.findOne({ where: { session_token } });
     if (!stylist) {
-      return { session_maintained: false };
+      return { status: HttpStatus.UNAUTHORIZED, session_expiration: null, session_maintained: false };
     }
     const currentTime = new Date();
     if (stylist.session_expiration > currentTime) {
@@ -62,9 +61,9 @@ export class StylistsService {
       );
       stylist.session_expiration = newExpiration;
       await this.stylistRepository.save(stylist);
-      return { session_maintained: true };
+      return { status: HttpStatus.OK, session_expiration: newExpiration, session_maintained: true };
     } else {
-      return { session_maintained: false };
+      return { status: HttpStatus.UNAUTHORIZED, session_expiration: null, session_maintained: false };
     }
   }
 
