@@ -1,9 +1,8 @@
-
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { LoginAttempt } from '../entities/login_attempts';
 import { LoginDto } from './dto/login.dto';
 import { Stylist } from '../entities/stylists';
-import { LoginAttempt } from '../entities/login-attempts'; // Assuming the entity is imported correctly
 import * as bcrypt from 'bcrypt';
 import { getRepository } from 'typeorm';
 
@@ -18,32 +17,32 @@ export class AuthService {
       throw new HttpException('Email and password are required', HttpStatus.BAD_REQUEST);
     }
 
+    const loginAttemptRepository = getRepository(LoginAttempt);
     const stylistRepository = getRepository(Stylist);
     const stylist = await stylistRepository.findOne({ where: { email } });
 
     if (!stylist) {
+      await this.logLoginAttempt(null, false);
       throw new HttpException('Login failed. Invalid email or password.', HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordMatching = await bcrypt.compare(password, stylist.password_hash);
     if (!isPasswordMatching) {
+      await this.logLoginAttempt(stylist.id, false);
       throw new HttpException('Login failed. Invalid email or password.', HttpStatus.UNAUTHORIZED);
     }
 
+    await this.logLoginAttempt(stylist.id, true);
     return { message: 'Login successful.' };
   }
 
-  async logFailedLoginAttempt(email: string): Promise<void> {
-    const stylistRepository = getRepository(Stylist);
-    const stylist = await stylistRepository.findOne({ where: { email } });
-    if (stylist) {
-      const loginAttemptRepository = getRepository(LoginAttempt);
-      await loginAttemptRepository.save({
-        stylist_id: stylist.id,
-        attempted_at: new Date(),
-        successful: false,
-      });
-    }
+  async logLoginAttempt(stylistId: number | null, successful: boolean): Promise<void> {
+    const loginAttemptRepository = getRepository(LoginAttempt);
+    await loginAttemptRepository.save({
+      stylist_id: stylistId,
+      attempted_at: new Date(),
+      successful: successful,
+    });
   }
 
   async authenticateStylist(email: string, password: string, keepSessionActive?: boolean): Promise<{ sessionToken: string; sessionExpiry: Date; }> {
@@ -59,17 +58,20 @@ export class AuthService {
     const stylistRepository = getRepository(Stylist);
     const stylist = await stylistRepository.findOne({ where: { email } });
     if (!stylist) {
+      await this.logLoginAttempt(null, false);
       throw new HttpException('Stylist not found.', HttpStatus.NOT_FOUND);
     }
 
     const passwordMatch = await bcrypt.compare(password, stylist.password_hash);
     if (!passwordMatch) {
+      await this.logLoginAttempt(stylist.id, false);
       throw new HttpException('Invalid password.', HttpStatus.UNAUTHORIZED);
     }
 
     const sessionToken = this.jwtService.sign({ id: stylist.id });
     const sessionExpiry = new Date(keepSessionActive ? Date.now() + 7776000000 : Date.now() + 86400000);
 
+    await this.logLoginAttempt(stylist.id, true);
     await stylistRepository.update(stylist.id, { session_token: sessionToken, session_expiry: sessionExpiry });
 
     return { sessionToken, sessionExpiry };

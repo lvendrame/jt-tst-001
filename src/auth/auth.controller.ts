@@ -30,10 +30,11 @@ export class AuthController {
       );
       return { sessionToken, sessionExpiry };
     } catch (error) {
+      // Log the failed login attempt
       await this.authService.logFailedLoginAttempt(loginStylistDto.email);
       throw new HttpException(
         error.message,
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+        error.status || HttpStatus.UNAUTHORIZED
       );
     }
   }
