@@ -35,4 +35,19 @@ export class AuthController {
       }
     }
   }
+
+  @Post('/login/cancel')
+  cancelLogin(): any {
+    try {
+      // Business logic for cancelling the login process can be implemented here
+      return {
+        statusCode: 200,
+        message: 'Login process cancelled successfully',
+      };
+    } catch (error) {
+      throw new HttpException('An unexpected error occurred on the server', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // other handlers...
 }
