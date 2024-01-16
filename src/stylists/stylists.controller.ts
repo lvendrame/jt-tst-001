@@ -39,7 +39,7 @@ export class StylistsController {
 
   @Post('login_cancel')
   @HttpCode(HttpStatus.OK)
-  cancelLoginProcess() {
+  async cancelLoginProcess() {
     return {
       status: HttpStatus.OK,
       message: 'You have returned to the previous screen.'
