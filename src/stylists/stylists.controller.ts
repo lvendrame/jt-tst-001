@@ -1,21 +1,21 @@
-import { Controller, Post, Body, HttpException, HttpStatus, BadRequestException, Put } from '@nestjs/common';
+import { Controller, Put, Post, Body, HttpCode, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
-import { ResetPasswordDto } from './dto/reset-password.dto'; // Assuming ResetPasswordDto exists and matches the requirement
-import { UpdateSessionDto } from '../auth/dto/update-session.dto';
+import { UpdateSessionDto } from '../../auth/dto/update-session.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
-import { MaintainSessionDto } from './dto/maintain-session.dto'; // Assuming MaintainSessionDto exists
+import { MaintainSessionDto } from './dto/maintain-session.dto';
 
-@Controller('api/stylists') // Updated to match the new code's route
+@Controller('stylists') // Updated to match the new code's route
 export class StylistsController {
   constructor(private readonly stylistsService: StylistsService) {}
 
-  @Post('/reset-password')
+  @Post('reset-password')
   async requestPasswordReset(@Body() requestPasswordResetDto: RequestPasswordResetDto) {
     try {
       const result = await this.stylistsService.requestPasswordReset(requestPasswordResetDto.email);
       return {
         message: 'Password reset email sent successfully.',
-        result // Assuming that the result is needed in the response
+        result
       };
     } catch (error) {
       throw new HttpException(
@@ -25,9 +25,8 @@ export class StylistsController {
     }
   }
 
-  @Post('/password/reset')
+  @Post('password/reset')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    // Validate the input parameters
     if (!resetPasswordDto.email) {
       throw new BadRequestException('Email is required.');
     }
@@ -37,7 +36,6 @@ export class StylistsController {
     if (!resetPasswordDto.new_password) {
       throw new BadRequestException('New password is required.');
     }
-    // Regex for basic email validation
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(resetPasswordDto.email)) {
       throw new BadRequestException('Invalid email format.');
@@ -51,7 +49,7 @@ export class StylistsController {
     }
   }
 
-  @Post('/maintain-session')
+  @Post('maintain-session')
   async maintainSession(@Body() maintainSessionDto: MaintainSessionDto) {
     try {
       return await this.stylistsService.maintainSession(maintainSessionDto.stylist_id, maintainSessionDto.keep_session_active);
@@ -60,8 +58,8 @@ export class StylistsController {
     }
   }
 
-  // The PUT method is used here instead of POST to match the new code's method
-  @Put('/session/update')
+  @Put('session/update')
+  @HttpCode(200)
   async updateSessionExpiry(@Body() updateSessionDto: UpdateSessionDto) {
     if (!updateSessionDto.session_token) {
       throw new HttpException('Session token is required.', HttpStatus.BAD_REQUEST);
@@ -70,8 +68,9 @@ export class StylistsController {
       throw new HttpException('Keep session active must be a boolean.', HttpStatus.BAD_REQUEST);
     }
     try {
-      const result = await this.stylistsService.updateSessionExpiry(updateSessionDto.session_token, updateSessionDto.keep_session_active);
-      return { statusCode: 200, ...result };
+      const { session_token, keep_session_active } = updateSessionDto;
+      const updatedSessionExpiry = await this.stylistsService.updateSessionExpiry(session_token, keep_session_active);
+      return updatedSessionExpiry;
     } catch (error) {
       if (error.status === HttpStatus.NOT_FOUND) {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -82,4 +81,6 @@ export class StylistsController {
       throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  // ... other existing controller methods ...
 }
