@@ -1,4 +1,4 @@
-import { Controller, Post, Body, BadRequestException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, UnauthorizedException, HttpException, HttpStatus, HttpCode } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { PasswordResetRequestDto } from './dto/password-reset-request.dto'; // This import is not used in the code
@@ -35,6 +35,32 @@ export class AuthController {
     }
   }
 
+  @Post('login/stylist')
+  @HttpCode(HttpStatus.OK)
+  async loginStylist(@Body() loginDto: LoginDto) {
+    if (!loginDto.email) {
+      throw new HttpException('Email is required.', HttpStatus.BAD_REQUEST);
+    }
+    if (!loginDto.password) {
+      throw new HttpException('Password is required.', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const user = await this.authService.login(loginDto);
+      return {
+        status: HttpStatus.OK,
+        message: 'Login successful',
+        session_token: user.session_token,
+        token_expiration: user.token_expiration,
+      };
+    } catch (error) {
+      if (error.status === HttpStatus.UNAUTHORIZED) {
+        throw new HttpException('Login failed', HttpStatus.UNAUTHORIZED);
+      } else {
+        throw new HttpException('An unexpected error occurred on the server.', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
   @Post('/login/cancel')
   cancelLogin(): any {
     try {
@@ -54,7 +80,7 @@ export class AuthController {
       throw new BadRequestException('Email is required.');
     }
     if (!this.validateEmailFormat(body.email)) {
-      throw new BadRequestException('Invalid email format.');
+      throw a BadRequestException('Invalid email format.');
     }
     try {
       const response = await this.authService.requestPasswordReset({ email: body.email });
