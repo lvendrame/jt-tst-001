@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpStatus, HttpCode, HttpException } from '@nestjs/common';
+import { Controller, Post, Body, HttpStatus, HttpCode, HttpException, UsePipes, ValidationPipe } from '@nestjs/common';
 import { StylistsService } from './stylists.service';
 import { MaintainSessionDto } from './dto/maintain-session.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
@@ -9,6 +9,10 @@ export class StylistsController {
 
   @Post('password_reset')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true, exceptionFactory: (errors) => {
+    const errorMessages = errors.map(error => Object.values(error.constraints)).join(', ');
+    throw new HttpException(errorMessages, HttpStatus.BAD_REQUEST);
+  }}))
   async requestPasswordReset(@Body() requestPasswordResetDto: RequestPasswordResetDto) {
     if (!requestPasswordResetDto.email) {
       throw new HttpException('Email is required.', HttpStatus.BAD_REQUEST);
@@ -39,7 +43,7 @@ export class StylistsController {
 
   @Post('login_cancel')
   @HttpCode(HttpStatus.OK)
-  async cancelLoginProcess() {
+  cancelLoginProcess() {
     return {
       status: HttpStatus.OK,
       message: 'You have returned to the previous screen.'
