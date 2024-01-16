@@ -1,3 +1,4 @@
+
 import { Body, Controller, Post, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -24,5 +25,10 @@ export class AuthController {
       loginStylistDto.keepSessionActive,
     );
     return { sessionToken, sessionExpiry };
+  }
+
+  @Post('cancelLogin')
+  async cancelLogin(): Promise<{ message: string }> {
+    return { message: 'Login process canceled successfully.' };
   }
 }
