@@ -1,10 +1,20 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 import { LoginStylistDto } from './dto/login-stylist.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('login')
+  async login(@Body() loginDto: LoginDto): Promise<{ message: string }> {
+    try {
+      return await this.authService.validateStylistLogin(loginDto);
+    } catch (error) {
+      throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   @Post('loginStylist')
   async loginStylist(@Body() loginStylistDto: LoginStylistDto) {
